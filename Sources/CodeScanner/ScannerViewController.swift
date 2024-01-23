@@ -14,6 +14,7 @@ extension CodeScannerView {
     
     public class ScannerViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, AVCaptureMetadataOutputObjectsDelegate, UIAdaptivePresentationControllerDelegate {
         private let photoOutput = AVCapturePhotoOutput()
+        private var metadataOutput: AVCaptureMetadataOutput?
         private var isCapturing = false
         private var handler: ((UIImage) -> Void)?
         var parentView: CodeScannerView!
@@ -23,6 +24,12 @@ extension CodeScannerView {
         private let showViewfinder: Bool
         
         let fallbackVideoCaptureDevice = AVCaptureDevice.default(for: .video)
+        
+        private var rectOfInterest: CGRect? {
+            didSet {
+                view.setNeedsLayout()
+            }
+        }
         
         private var isGalleryShowing: Bool = false {
             didSet {
@@ -186,7 +193,12 @@ extension CodeScannerView {
         }
 
         override public func viewWillLayoutSubviews() {
+            super.viewWillLayoutSubviews()
             previewLayer?.frame = view.layer.bounds
+            if let rectOfInterest {
+                let convertedROI = previewLayer.metadataOutputRectConverted(fromLayerRect: rectOfInterest)
+                metadataOutput?.rectOfInterest = convertedROI
+            }
         }
 
         @objc func updateOrientation() {
@@ -314,6 +326,7 @@ extension CodeScannerView {
                 captureSession?.addOutput(photoOutput)
                 metadataOutput.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
                 metadataOutput.metadataObjectTypes = parentView.codeTypes
+                self.metadataOutput = metadataOutput
             } else {
                 didFail(reason: .badOutput)
                 return
@@ -416,10 +429,12 @@ extension CodeScannerView {
         }
         #endif
         
-        func updateViewController(isTorchOn: Bool, isGalleryPresented: Bool, isManualCapture: Bool, isManualSelect: Bool) {
+        func updateViewController(isTorchOn: Bool, isGalleryPresented: Bool, isManualCapture: Bool, isManualSelect: Bool, rectOfInterest: CGRect?) {
             guard let videoCaptureDevice = parentView.videoCaptureDevice ?? fallbackVideoCaptureDevice else {
                 return
             }
+            
+            self.rectOfInterest = rectOfInterest
             
             if videoCaptureDevice.hasTorch {
                 try? videoCaptureDevice.lockForConfiguration()
