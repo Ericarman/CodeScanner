@@ -194,20 +194,13 @@ extension CodeScannerView {
 
         override public func viewWillLayoutSubviews() {
             super.viewWillLayoutSubviews()
+            stop()
             previewLayer?.frame = view.layer.bounds
             if let rectOfInterest {
                 let convertedROI = previewLayer.metadataOutputRectConverted(fromLayerRect: rectOfInterest)
                 metadataOutput?.rectOfInterest = convertedROI
             }
-        }
-        
-        public override func viewDidLayoutSubviews() {
-            super.viewDidLayoutSubviews()
-            previewLayer?.frame = view.layer.bounds
-            if let rectOfInterest {
-                let convertedROI = previewLayer.metadataOutputRectConverted(fromLayerRect: rectOfInterest)
-                metadataOutput?.rectOfInterest = convertedROI
-            }
+            start()
         }
 
         @objc func updateOrientation() {
@@ -258,6 +251,20 @@ extension CodeScannerView {
                 DispatchQueue.global(qos: .userInteractive).async {
                     self.captureSession?.startRunning()
                 }
+            }
+        }
+        
+        func start() {
+            guard let captureSession else { return }
+            if !captureSession.isRunning {
+                captureSession.startRunning()
+            }
+        }
+        
+        func stop() {
+            guard let captureSession else { return }
+            if captureSession.isRunning {
+                captureSession.stopRunning()
             }
         }
 
