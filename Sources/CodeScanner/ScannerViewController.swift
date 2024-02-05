@@ -200,6 +200,15 @@ extension CodeScannerView {
                 metadataOutput?.rectOfInterest = convertedROI
             }
         }
+        
+        public override func viewDidLayoutSubviews() {
+            super.viewDidLayoutSubviews()
+            previewLayer?.frame = view.layer.bounds
+            if let rectOfInterest {
+                let convertedROI = previewLayer.metadataOutputRectConverted(fromLayerRect: rectOfInterest)
+                metadataOutput?.rectOfInterest = convertedROI
+            }
+        }
 
         @objc func updateOrientation() {
             guard let orientation = view.window?.windowScene?.interfaceOrientation else { return }
